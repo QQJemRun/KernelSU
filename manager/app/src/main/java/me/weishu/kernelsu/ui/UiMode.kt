@@ -16,4 +16,4 @@ enum class UiMode(val value: String) {
     }
 }
 
-val LocalUiMode = staticCompositionLocalOf { UiMode.Miuix }
+val LocalUiMode = staticCompositionLocalOf { UiMode.Material }
