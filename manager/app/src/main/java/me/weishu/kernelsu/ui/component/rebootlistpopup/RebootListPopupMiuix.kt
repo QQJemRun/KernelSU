@@ -1,7 +1,6 @@
 package me.weishu.kernelsu.ui.component.rebootlistpopup
 
 import android.content.Context
-import android.os.Build
 import android.os.PowerManager
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
@@ -52,12 +51,12 @@ fun RebootListPopupMiuix(
             val pm = LocalContext.current.getSystemService(Context.POWER_SERVICE) as PowerManager?
 
             @Suppress("DEPRECATION")
-            val isRebootingUserspaceSupported =
-                Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && pm?.isRebootingUserspaceSupported == true
+            val isRebootingUserspaceSupported = pm?.isRebootingUserspaceSupported == true
 
             ListPopupColumn {
                 val rebootOptions = mutableListOf(
                     Pair(R.string.reboot, ""),
+                    Pair(R.string.reboot_soft, "soft_reboot"),
                     Pair(R.string.reboot_recovery, "recovery"),
                     Pair(R.string.reboot_bootloader, "bootloader"),
                     Pair(R.string.reboot_download, "download"),

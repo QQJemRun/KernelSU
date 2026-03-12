@@ -80,6 +80,9 @@ android {
     }
 
     packaging {
+        dex {
+            useLegacyPackaging = true
+        }
         jniLibs {
             useLegacyPackaging = true
         }
@@ -109,6 +112,9 @@ android {
         targetSdk = androidTargetSdkVersion
         versionCode = managerVersionCode
         versionName = managerVersionName
+
+        val isPrBuild = project.findProperty("IS_PR_BUILD")?.toString()?.toBoolean() ?: false
+        buildConfigField("boolean", "IS_PR_BUILD", isPrBuild.toString())
 
         externalNativeBuild {
             cmake {

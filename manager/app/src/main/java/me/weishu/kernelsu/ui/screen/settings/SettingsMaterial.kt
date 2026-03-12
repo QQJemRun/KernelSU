@@ -23,6 +23,7 @@ import androidx.compose.material.icons.filled.BugReport
 import androidx.compose.material.icons.filled.ContactPage
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.DeveloperMode
+import androidx.compose.material.icons.filled.ElectricalServices
 import androidx.compose.material.icons.filled.Fence
 import androidx.compose.material.icons.filled.FolderDelete
 import androidx.compose.material.icons.filled.Palette
@@ -31,6 +32,7 @@ import androidx.compose.material.icons.filled.RemoveModerator
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Update
+import androidx.compose.material.icons.rounded.Dashboard
 import androidx.compose.material.icons.rounded.Palette
 import androidx.compose.material.icons.rounded.UploadFile
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -175,6 +177,18 @@ fun SettingPagerMaterial(navigator: Navigator, bottomInnerPadding: Dp) {
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
                 content = buildList {
                     add {
+                        SegmentedDropdownItem(
+                            icon = Icons.Rounded.Dashboard,
+                            title = stringResource(id = R.string.settings_ui_mode),
+                            summary = stringResource(id = R.string.settings_ui_mode_summary),
+                            items = uiModeItems,
+                            selectedIndex = if (uiState.uiMode == UiMode.Material.value) 1 else 0,
+                            onItemSelected = { index ->
+                                viewModel.setUiMode(if (index == 0) UiMode.Miuix.value else UiMode.Material.value)
+                            }
+                        )
+                    }
+                    add {
                         SegmentedListItem(
                             onClick = { navigator.push(Route.ColorPalette) },
                             headlineContent = { Text(stringResource(id = R.string.settings_theme)) },
@@ -185,18 +199,6 @@ fun SettingPagerMaterial(navigator: Navigator, bottomInnerPadding: Dp) {
                                     Icons.AutoMirrored.Filled.KeyboardArrowRight,
                                     null
                                 )
-                            }
-                        )
-                    }
-                    add {
-                        SegmentedDropdownItem(
-                            icon = Icons.Rounded.Palette,
-                            title = stringResource(id = R.string.settings_ui_mode),
-                            summary = stringResource(id = R.string.settings_ui_mode_summary),
-                            items = uiModeItems,
-                            selectedIndex = if (uiState.uiMode == UiMode.Material.value) 1 else 0,
-                            onItemSelected = { index ->
-                                viewModel.setUiMode(if (index == 0) UiMode.Miuix.value else UiMode.Material.value)
                             }
                         )
                     }
@@ -287,6 +289,17 @@ fun SettingPagerMaterial(navigator: Navigator, bottomInnerPadding: Dp) {
                                 checked = uiState.enableWebDebugging,
                                 onCheckedChange = {
                                     viewModel.setEnableWebDebugging(it)
+                                }
+                            )
+                        },
+                        {
+                            SegmentedSwitchItem(
+                                icon = Icons.Filled.ElectricalServices,
+                                title = stringResource(id = R.string.settings_auto_jailbreak),
+                                summary = stringResource(id = R.string.settings_auto_jailbreak_summary),
+                                checked = uiState.autoJailbreak,
+                                onCheckedChange = {
+                                    viewModel.setAutoJailbreak(it)
                                 }
                             )
                         }

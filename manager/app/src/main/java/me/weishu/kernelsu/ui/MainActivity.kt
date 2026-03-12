@@ -4,7 +4,6 @@ import android.annotation.SuppressLint
 import android.content.Intent
 import android.content.SharedPreferences
 import android.net.Uri
-import android.os.Build
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
@@ -131,9 +130,7 @@ class MainActivity : ComponentActivity() {
                         android.graphics.Color.TRANSPARENT
                     ) { darkMode },
                 )
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                    window.isNavigationBarContrastEnforced = false
-                }
+                window.isNavigationBarContrastEnforced = false
 
                 val listener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
                     when (key) {
@@ -424,8 +421,6 @@ private fun ShortcutIntentHandler(
     LaunchedEffect(intentStateValue) {
         val intent = activity.intent
         val type = intent?.getStringExtra("shortcut_type") ?: return@LaunchedEffect
-
-        intent.removeExtra("shortcut_type")
 
         when (type) {
             "module_action" -> {
