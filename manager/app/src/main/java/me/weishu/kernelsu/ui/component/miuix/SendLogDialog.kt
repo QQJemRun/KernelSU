@@ -1,4 +1,4 @@
-package me.weishu.kernelsu.ui.component.sendlogdialog
+package me.weishu.kernelsu.ui.component.miuix
 
 import android.content.Intent
 import android.net.Uri
@@ -12,7 +12,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Save
 import androidx.compose.material.icons.rounded.Share
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -40,8 +39,9 @@ import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
 @Composable
-fun SendLogDialogMiuix(
-    showDialog: MutableState<Boolean>,
+fun SendLogDialog(
+    show: Boolean,
+    onDismissRequest: () -> Unit,
     loadingDialog: LoadingDialogHandle,
 ) {
     val context = LocalContext.current
@@ -66,11 +66,9 @@ fun SendLogDialogMiuix(
         }
     }
     SuperDialog(
-        show = showDialog,
+        show = show,
+        onDismissRequest = onDismissRequest,
         insideMargin = DpSize(0.dp, 0.dp),
-        onDismissRequest = {
-            showDialog.value = false
-        },
         content = {
             Text(
                 modifier = Modifier
@@ -96,7 +94,7 @@ fun SendLogDialogMiuix(
                     val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd_HH_mm")
                     val current = LocalDateTime.now().format(formatter)
                     exportBugreportLauncher.launch("KernelSU_bugreport_${current}.tar.gz")
-                    showDialog.value = false
+                    onDismissRequest()
                 },
                 insideMargin = PaddingValues(horizontal = 24.dp, vertical = 12.dp)
             )
@@ -112,7 +110,7 @@ fun SendLogDialogMiuix(
                 },
                 onClick = {
                     scope.launch {
-                        showDialog.value = false
+                        onDismissRequest()
                         val bugreport = loadingDialog.withLoading {
                             withContext(Dispatchers.IO) {
                                 getBugreportFile(context)
@@ -145,7 +143,7 @@ fun SendLogDialogMiuix(
             TextButton(
                 text = stringResource(id = android.R.string.cancel),
                 onClick = {
-                    showDialog.value = false
+                    onDismissRequest()
                 },
                 modifier = Modifier
                     .fillMaxWidth()

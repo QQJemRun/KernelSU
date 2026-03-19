@@ -1,10 +1,11 @@
 package me.weishu.kernelsu.ui.screen.install
 
-import android.app.Activity
-import android.content.Intent
-import android.widget.Toast
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
@@ -21,6 +22,7 @@ import androidx.compose.material.icons.automirrored.filled.DriveFileMove
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
@@ -37,36 +39,19 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.produceState
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.nestedscroll.nestedScroll
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.compose.dropUnlessResumed
 import me.weishu.kernelsu.R
-import me.weishu.kernelsu.getKernelVersion
-import me.weishu.kernelsu.ui.component.choosekmidialog.ChooseKmiDialog
 import me.weishu.kernelsu.ui.component.dialog.rememberConfirmDialog
+import me.weishu.kernelsu.ui.component.material.SegmentedCheckboxItem
 import me.weishu.kernelsu.ui.component.material.SegmentedColumn
 import me.weishu.kernelsu.ui.component.material.SegmentedDropdownItem
 import me.weishu.kernelsu.ui.component.material.SegmentedListItem
 import me.weishu.kernelsu.ui.component.material.SegmentedRadioItem
-import me.weishu.kernelsu.ui.navigation3.LocalNavigator
-import me.weishu.kernelsu.ui.navigation3.Route
-import me.weishu.kernelsu.ui.screen.flash.FlashIt
 import me.weishu.kernelsu.ui.util.LkmSelection
-import me.weishu.kernelsu.ui.util.getAvailablePartitions
-import me.weishu.kernelsu.ui.util.getCurrentKmi
-import me.weishu.kernelsu.ui.util.getDefaultPartition
-import me.weishu.kernelsu.ui.util.getSlotSuffix
-import me.weishu.kernelsu.ui.util.isAbDevice
-import me.weishu.kernelsu.ui.util.rootAvailable
 
 /**
  * @author weishu
@@ -74,84 +59,10 @@ import me.weishu.kernelsu.ui.util.rootAvailable
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun InstallScreenMaterial() {
-    val navigator = LocalNavigator.current
-    val context = LocalContext.current
-
-    var installMethod by remember {
-        mutableStateOf<InstallMethod?>(null)
-    }
-
-    var lkmSelection by remember {
-        mutableStateOf<LkmSelection>(LkmSelection.KmiNone)
-    }
-
-    var partitionSelectionIndex by remember { mutableIntStateOf(0) }
-    var partitionsState by remember { mutableStateOf<List<String>>(emptyList()) }
-    var hasCustomSelected by remember { mutableStateOf(false) }
-
-    val onInstall = {
-        installMethod?.let { method ->
-            val isOta = method is InstallMethod.DirectInstallToInactiveSlot
-            val partitionSelection = partitionsState.getOrNull(partitionSelectionIndex)
-            val flashIt = FlashIt.FlashBoot(
-                boot = if (method is InstallMethod.SelectFile) method.uri else null,
-                lkm = lkmSelection,
-                ota = isOta,
-                partition = partitionSelection
-            )
-            navigator.push(Route.Flash(flashIt))
-        }
-    }
-
-    val currentKmi by produceState(initialValue = "") { value = getCurrentKmi() }
-
-    val showChooseKmiDialog = rememberSaveable { mutableStateOf(false) }
-    val chooseKmiDialog = ChooseKmiDialog(showChooseKmiDialog) { kmi ->
-        kmi?.let {
-            lkmSelection = LkmSelection.KmiString(it)
-            onInstall()
-        }
-    }
-
-    val onClickNext = {
-        val isLkmSelected = lkmSelection != LkmSelection.KmiNone
-        val isKmiUnknown = currentKmi.isBlank()
-        val isSelectFileMode = installMethod is InstallMethod.SelectFile
-        if (!isLkmSelected && (isKmiUnknown || isSelectFileMode)) {
-            // no lkm file selected and cannot get current kmi or select file mode
-            showChooseKmiDialog.value = true
-            chooseKmiDialog
-        } else {
-            onInstall()
-        }
-    }
-
-    val selectLkmLauncher =
-        rememberLauncherForActivityResult(contract = ActivityResultContracts.StartActivityForResult()) {
-            if (it.resultCode == Activity.RESULT_OK) {
-                it.data?.data?.let { uri ->
-                    val isKo = isKoFile(context, uri)
-                    if (isKo) {
-                        lkmSelection = LkmSelection.LkmUri(uri)
-                    } else {
-                        lkmSelection = LkmSelection.KmiNone
-                        Toast.makeText(
-                            context,
-                            R.string.install_only_support_ko_file,
-                            Toast.LENGTH_SHORT
-                        ).show()
-                    }
-                }
-            }
-        }
-
-    val onLkmUpload = {
-        selectLkmLauncher.launch(Intent(Intent.ACTION_GET_CONTENT).apply {
-            type = "application/octet-stream"
-        })
-    }
-
+internal fun InstallScreenMaterial(
+    uiState: InstallUiState,
+    actions: InstallScreenActions,
+) {
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior(rememberTopAppBarState())
 
     LaunchedEffect(Unit) {
@@ -161,7 +72,7 @@ fun InstallScreenMaterial() {
     Scaffold(
         topBar = {
             TopBar(
-                onBack = dropUnlessResumed { navigator.pop() },
+                onBack = actions.onBack,
                 scrollBehavior = scrollBehavior,
             )
         },
@@ -174,71 +85,110 @@ fun InstallScreenMaterial() {
                 .nestedScroll(scrollBehavior.nestedScrollConnection)
                 .verticalScroll(rememberScrollState())
         ) {
-            SelectInstallMethod { method ->
-                installMethod = method
-            }
-            val isOta = installMethod is InstallMethod.DirectInstallToInactiveSlot
-            val suffix = produceState(initialValue = "", isOta) {
-                value = getSlotSuffix(isOta)
-            }.value
-            val partitions by produceState(initialValue = emptyList<String>()) {
-                value = getAvailablePartitions()
-            }
-            val defaultPartition by produceState(initialValue = "") {
-                value = getDefaultPartition()
-            }
-            LaunchedEffect(partitions) {
-                partitionsState = partitions
-            }
-            val defaultIndex = remember(partitions, defaultPartition) {
-                partitions.indexOf(defaultPartition).coerceAtLeast(0)
-            }
-            LaunchedEffect(defaultIndex, hasCustomSelected) {
-                if (!hasCustomSelected) {
-                    partitionSelectionIndex = defaultIndex
-                }
-            }
-            val displayPartitions = remember(partitions, defaultPartition) {
-                partitions.map { name ->
-                    if (defaultPartition == name) "$name (default)" else name
-                }
-            }
+            SelectInstallMethod(
+                state = uiState,
+                onSelected = actions.onSelectMethod,
+                onSelectBootImage = actions.onSelectBootImage,
+            )
+
             SegmentedColumn(
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
                 content = buildList {
-                    if (partitions.isNotEmpty()) add {
+                    if (uiState.displayPartitions.isNotEmpty()) add {
                         SegmentedDropdownItem(
-                            enabled = installMethod is InstallMethod.DirectInstall || installMethod is InstallMethod.DirectInstallToInactiveSlot,
-                            items = displayPartitions,
-                            selectedIndex = partitionSelectionIndex,
-                            title = "${stringResource(R.string.install_select_partition)} (${suffix})",
-                            onItemSelected = { index ->
-                                hasCustomSelected = true
-                                partitionSelectionIndex = index
-                            },
+                            enabled = uiState.canSelectPartition,
+                            items = uiState.displayPartitions,
+                            selectedIndex = uiState.partitionSelectionIndex,
+                            title = "${stringResource(R.string.install_select_partition)} (${uiState.slotSuffix})",
+                            onItemSelected = actions.onSelectPartition,
                             icon = Icons.Filled.Edit
                         )
                     }
                     add {
                         SegmentedListItem(
-                            leadingContent = { Icon(Icons.AutoMirrored.Filled.DriveFileMove, null) },
+                            leadingContent = {
+                                Icon(
+                                    Icons.AutoMirrored.Filled.DriveFileMove,
+                                    null
+                                )
+                            },
                             headlineContent = { Text(stringResource(R.string.install_upload_lkm_file)) },
                             supportingContent = {
-                                (lkmSelection as? LkmSelection.LkmUri)?.let {
-                                    Text(stringResource(R.string.selected_lkm, it.uri.lastPathSegment ?: "(file)"))
+                                (uiState.lkmSelection as? LkmSelection.LkmUri)?.let {
+                                    Text(
+                                        stringResource(
+                                            R.string.selected_lkm,
+                                            it.uri.lastPathSegment ?: "(file)"
+                                        )
+                                    )
                                 }
                             },
                             trailingContent = {
-                                if (lkmSelection is LkmSelection.LkmUri) {
-                                    IconButton(onClick = { lkmSelection = LkmSelection.KmiNone }) {
-                                        Icon(Icons.Filled.Close, contentDescription = stringResource(android.R.string.cancel))
+                                if (uiState.lkmSelection is LkmSelection.LkmUri) {
+                                    IconButton(onClick = actions.onClearLkm) {
+                                        Icon(
+                                            Icons.Filled.Close,
+                                            contentDescription = stringResource(android.R.string.cancel)
+                                        )
                                     }
                                 } else {
                                     Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null)
                                 }
                             },
-                            onClick = { onLkmUpload() }
+                            onClick = actions.onUploadLkm
                         )
+                    }
+                }
+            )
+
+            SegmentedColumn(
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                visibleLen = if (uiState.advancedOptionsShown) 0 else 1,
+                content = buildList {
+                    val rotationState by animateFloatAsState(
+                        targetValue = if (uiState.advancedOptionsShown) 180f else 0f,
+                        label = "RotationAnimation"
+                    )
+                    add {
+                        SegmentedListItem(
+                            headlineContent = { Text(stringResource(R.string.advanced_options)) },
+                            trailingContent = {
+                                Icon(
+                                    imageVector = Icons.Filled.ExpandMore,
+                                    contentDescription = stringResource(R.string.expand),
+                                    modifier = Modifier.graphicsLayer { rotationZ = rotationState }
+                                )
+                            },
+                            onClick = actions.onAdvancedOptionsClicked
+                        )
+                    }
+                    add {
+                        AnimatedVisibility(
+                            uiState.advancedOptionsShown,
+                            enter = expandVertically() + fadeIn(),
+                            exit = shrinkVertically() + fadeOut()
+                        ) {
+                            SegmentedCheckboxItem(
+                                title = stringResource(id = R.string.allow_shell),
+                                summary = stringResource(id = R.string.allow_shell_summary),
+                                checked = uiState.allowShell,
+                                onCheckedChange = actions.onSelectAllowShell,
+                            )
+                        }
+                    }
+                    add {
+                        AnimatedVisibility(
+                            uiState.advancedOptionsShown,
+                            enter = expandVertically() + fadeIn(),
+                            exit = shrinkVertically() + fadeOut()
+                        ) {
+                            SegmentedCheckboxItem(
+                                title = stringResource(id = R.string.enable_adb),
+                                summary = stringResource(id = R.string.enable_adb_summary),
+                                checked = uiState.enableAdb,
+                                onCheckedChange = actions.onSelectEnableAdb,
+                            )
+                        }
                     }
                 }
             )
@@ -246,54 +196,21 @@ fun InstallScreenMaterial() {
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 4.dp),
-                enabled = installMethod != null,
-                onClick = { onClickNext() }
+                enabled = uiState.installMethod != null,
+                onClick = actions.onNext
             ) { Text(stringResource(R.string.install_next)) }
         }
     }
 }
 
 @Composable
-private fun SelectInstallMethod(onSelected: (InstallMethod) -> Unit = {}) {
-    val rootAvailable = rootAvailable()
-    val isAbDevice = produceState(initialValue = false) {
-        value = isAbDevice()
-    }.value
-    val defaultPartitionName = produceState(initialValue = "boot") {
-        value = getDefaultPartition()
-    }.value
-    val isGkiDevice = produceState(initialValue = false) {
-        value = getKernelVersion().isGKI()
-    }.value
-    val selectFileTip = stringResource(
-        id = R.string.select_file_tip, defaultPartitionName
-    )
-    val selectFileTipNoGKI = stringResource(id = R.string.select_file_tip_nogki)
-    val radioOptions = mutableListOf<InstallMethod>(InstallMethod.SelectFile(summary = if (isGkiDevice) selectFileTip else selectFileTipNoGKI))
-    if (rootAvailable && isGkiDevice) {
-        radioOptions.add(InstallMethod.DirectInstall)
-
-        if (isAbDevice) {
-            radioOptions.add(InstallMethod.DirectInstallToInactiveSlot)
-        }
-    }
-
-    var selectedOption by remember { mutableStateOf<InstallMethod?>(null) }
-    val selectImageLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.StartActivityForResult()
-    ) {
-        if (it.resultCode == Activity.RESULT_OK) {
-            it.data?.data?.let { uri ->
-                val option = InstallMethod.SelectFile(uri, summary = selectFileTip)
-                selectedOption = option
-                onSelected(option)
-            }
-        }
-    }
-
+private fun SelectInstallMethod(
+    state: InstallUiState,
+    onSelected: (InstallMethod) -> Unit,
+    onSelectBootImage: () -> Unit,
+) {
     val confirmDialog = rememberConfirmDialog(
         onConfirm = {
-            selectedOption = InstallMethod.DirectInstallToInactiveSlot
             onSelected(InstallMethod.DirectInstallToInactiveSlot)
         },
         onDismiss = null
@@ -302,34 +219,22 @@ private fun SelectInstallMethod(onSelected: (InstallMethod) -> Unit = {}) {
     val dialogContent = stringResource(R.string.install_inactive_slot_warning)
 
     val onClick = { option: InstallMethod ->
-
         when (option) {
-            is InstallMethod.SelectFile -> {
-                selectImageLauncher.launch(Intent(Intent.ACTION_GET_CONTENT).apply {
-                    type = "application/octet-stream"
-                })
-            }
-
-            is InstallMethod.DirectInstall -> {
-                selectedOption = option
-                onSelected(option)
-            }
-
-            is InstallMethod.DirectInstallToInactiveSlot -> {
-                confirmDialog.showConfirm(dialogTitle, dialogContent)
-            }
+            is InstallMethod.SelectFile -> onSelectBootImage()
+            is InstallMethod.DirectInstall -> onSelected(option)
+            is InstallMethod.DirectInstallToInactiveSlot -> confirmDialog.showConfirm(dialogTitle, dialogContent)
         }
     }
 
-    key(isAbDevice) {
+    key(state.installMethodOptions.size) {
         SegmentedColumn(
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-            content = radioOptions.map { option ->
+            content = state.installMethodOptions.map { option ->
                 {
                     SegmentedRadioItem(
                         title = stringResource(option.label),
                         summary = option.summary,
-                        selected = option.javaClass == selectedOption?.javaClass,
+                        selected = option.javaClass == state.installMethod?.javaClass,
                         onClick = { onClick(option) }
                     )
                 }

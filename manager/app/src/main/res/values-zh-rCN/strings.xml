@@ -7,6 +7,7 @@
     <string name="home_working_version">版本：%d</string>
     <string name="home_unsupported">不支持</string>
     <string name="home_unsupported_reason">KernelSU 现在只支持 GKI 内核，但是你可以为 GKI 设备补丁镜像</string>
+    <string name="home_version_mismatch">管理器版本 (%1$d) 与 KernelSU 驱动版本 (%2$d) 不匹配。</string>
     <string name="home_kernel">内核版本</string>
     <string name="home_manager_version">管理器版本</string>
     <string name="home_fingerprint">系统指纹</string>
@@ -202,12 +203,10 @@
     <string name="module_shortcut_title">创建快捷方式</string>
     <string name="module_shortcut_name_label">快捷方式名称</string>
     <string name="module_shortcut_icon_pick">选择自定义图标</string>
-    <string name="module_shortcut_add">添加快捷方式</string>
     <string name="module_shortcut_not_supported">启动器不支持桌面快捷方式</string>
     <string name="module_shortcut_created">已在桌面创建快捷方式。</string>
     <string name="module_shortcut_updated">快捷方式已更新。</string>
     <string name="module_shortcut_delete">删除快捷方式</string>
-    <string name="module_shortcut_type_title">选择类型</string>
     <string name="module_shortcut_permission_tip_xiaomi">请在 Xiaomi 设置中为本应用启用「桌面快捷方式」权限</string>
     <string name="module_shortcut_permission_tip_oppo">请在 OPPO 设置中为本应用启用「创建桌面快捷方式」权限</string>
     <string name="module_shortcut_permission_tip_default">若创建快捷方式失败，请在系统设置中为本应用启用桌面快捷方式权限</string>
@@ -226,4 +225,10 @@
     <string name="show_only_primary_user_apps">只显示主用户应用</string>
     <string name="settings_auto_jailbreak">自动越狱</string>
     <string name="settings_auto_jailbreak_summary">开机检测到 Permissive SELinux 时自动使用 Magica 提权。需要授予本应用自启动权限。</string>
+    <string name="allow_shell">总是给 shell 授予 root 权限</string>
+    <string name="allow_shell_summary">总是允许 adb shell 调用 su ，非必要请勿开启。</string>
+    <string name="enable_adb">启动时强制启用 ADB 调试</string>
+    <string name="enable_adb_summary">强制允许 USB 调试并取消 adb 认证，非必要请勿开启。</string>
+    <string name="advanced_options">高级选项</string>
+    <string name="expand">展开</string>
 </resources>
